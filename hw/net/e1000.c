@@ -861,8 +861,10 @@ receive_filter(E1000State *s, const uint8_t *buf, int size)
         return 1;
 
     for (rp = s->mac_reg + RA; rp < s->mac_reg + RA + 32; rp += 2) {
-        if (!(rp[1] & E1000_RAH_AV))
+        if (!(rp[1] & E1000_RAH_AV)) {
+            DBGOUT(RXFILTER, "[Tmp] rp1:%x E1000_RAH_AV:%x\n", rp[1], E1000_RAH_AV);
             continue;
+        }
         ra[0] = cpu_to_le32(rp[0]);
         ra[1] = cpu_to_le32(rp[1]);
         if (!memcmp(buf, (uint8_t *)ra, 6)) {
@@ -871,6 +873,11 @@ receive_filter(E1000State *s, const uint8_t *buf, int size)
                    (int)(rp - s->mac_reg - RA)/2,
                    buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
             return 1;
+        } else {
+            uint8_t *ra6 = (uint8_t *)ra;
+            DBGOUT(RXFILTER,
+                   "[Tmp] unicast mismatch: %02x:%02x:%02x:%02x:%02x:%02x\n",
+                   ra6[0], ra6[1], ra6[2], ra6[3], ra6[4], ra6[5]);
         }
     }
     DBGOUT(RXFILTER, "unicast mismatch: %02x:%02x:%02x:%02x:%02x:%02x\n",
